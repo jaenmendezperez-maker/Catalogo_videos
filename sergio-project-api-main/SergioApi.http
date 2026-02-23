@@ -1,0 +1,6 @@
+@SergioApi_HostAddress = http://localhost:5094
+
+GET {{SergioApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
