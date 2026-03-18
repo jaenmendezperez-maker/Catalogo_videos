@@ -14,9 +14,8 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   // Redirige al lugar de origen si venía de una ruta protegida
-  const from = location.state?.from?.pathname || '/dashboard';
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     if (error) setError('');
   };
@@ -29,9 +28,11 @@ function Login() {
     }
     setLoading(true);
     try {
-      const { user, token } = await login(form.correo, form.contrasena);
-      setAuth(user, token);
-      navigate(from, { replace: true });
+    const { user, token } = await login(form.correo, form.contrasena);
+    setAuth(user, token);
+
+    const destino = user.rol === 'Admin' ? '/admin' : '/dashboard';
+    navigate(location.state?.from?.pathname || destino, { replace: true });
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión.');
     } finally {

@@ -47,13 +47,13 @@ function AppRouter() {
 
           {/* ── Usuario autenticado ── */}
           <Route path="dashboard" element={
-            <ProtectedRoute><Dashboard /></ProtectedRoute>
+            <ProtectedRoute userOnly><Dashboard /></ProtectedRoute>
           } />
           <Route path="mis-cursos" element={
-            <ProtectedRoute><MyCourses /></ProtectedRoute>
+            <ProtectedRoute userOnly><MyCourses /></ProtectedRoute>
           } />
           <Route path="perfil" element={
-            <ProtectedRoute><Profile /></ProtectedRoute>
+            <ProtectedRoute userOnly><Profile /></ProtectedRoute>
           } />
 
           {/* ── Admin ── */}
