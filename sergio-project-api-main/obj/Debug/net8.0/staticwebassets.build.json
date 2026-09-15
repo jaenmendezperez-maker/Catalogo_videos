@@ -1,11 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "xDqEGEABYsT6vO4oeg0Rel+IcFBPhAFP5ClVkbfE6c0=",
-  "Source": "SergioApi",
-  "BasePath": "_content/SergioApi",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
-}
+{"Version":1,"Hash":"k8Bu2Y93SBYsXW720bayqHpc/lGlnTWw0SMIRe7VYXY=","Source":"SergioApi","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}
