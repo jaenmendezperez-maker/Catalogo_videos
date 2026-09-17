@@ -1,0 +1,41 @@
+meta {
+  name: Listar cursos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/cursos?pagina=1&porPagina=20
+  body: none
+  auth: none
+}
+
+params:query {
+  pagina: 1
+  porPagina: 20
+  ~busqueda: teoria
+}
+
+script:post-response {
+  if (res.getStatus() === 200 && res.body.datos.length > 0) {
+    bru.setEnvVar("cursoId", res.body.datos[0].id);
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("no expone identificadores de Bunny", function () {
+    res.body.datos.forEach(function (c) {
+      expect(c).to.not.have.property("bunnyCollectionId");
+      expect(c).to.not.have.property("previewVideoIds");
+    });
+  });
+}
+
+docs {
+  previewVideoIds se retiro de la respuesta publica: era un CSV de GUIDs de
+  video, la misma llave que permitia saltarse el paywall.
+}

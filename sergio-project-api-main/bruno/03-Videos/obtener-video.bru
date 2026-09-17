@@ -1,0 +1,26 @@
+meta {
+  name: Obtener video
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/videos/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: {{videoId}}
+}
+
+tests {
+  test("no expone el GUID de Bunny", function () {
+    expect(res.body).to.not.have.property("bunnyVideoId");
+  });
+}
+
+docs {
+  Un video con esPublico = false devuelve 404 a quien no sea Admin:
+  404 y no 403, para no revelar que el borrador existe.
+}

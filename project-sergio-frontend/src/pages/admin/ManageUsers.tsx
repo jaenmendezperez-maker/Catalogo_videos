@@ -1,28 +1,31 @@
 // src/pages/admin/ManageUsers.tsx
 import { useState, useMemo } from 'react'
-import { useUsuarios, useUpdateUsuario, useDeleteUsuario, useToggleEstado } from '../../api/usuariosApi'
+import { useUsuarios, useUpdateUsuario, useDeleteUsuario } from '../../api/usuariosApi'
 import Modal from '../../components/ui/Modal'
 import Spinner from '../../components/ui/Spinner'
 import Alert from '../../components/ui/Alert'
-import type { User } from '../../types'
-import type { AlertState } from '../../types'
+import type { UsuarioListadoDto, ActualizarUsuarioDto, AlertState, Rol } from '../../types'
 
 function Icon({ name, className = '' }: { name: string; className?: string }) {
   return <span className={`material-symbols-outlined ${className}`}>{name}</span>
 }
 
+// El backend espera rolId numérico, la UI trabaja con el nombre — este es el único lugar que traduce
+const ROL_A_ID: Record<Rol, 1 | 2 | 3> = { Admin: 1, Usuario: 2, Educador: 3 }
+
 function ManageUsers() {
-  const { data: usuarios = [], isLoading, error } = useUsuarios()
+  const { data, isLoading, error } = useUsuarios()
+  const usuarios = data?.datos ?? []
+
   const { mutate: updateUsuario, isPending: updatingUser } = useUpdateUsuario()
   const { mutate: deleteUsuario, isPending: deletingUser } = useDeleteUsuario()
-  const { mutate: toggleEstado } = useToggleEstado()
 
-  const [busqueda,      setBusqueda]      = useState('')
-  const [filtroRol,     setFiltroRol]     = useState('Todos')
-  const [modalUser,     setModalUser]     = useState<User | null>(null)
-  const [modalEliminar, setModalEliminar] = useState<User | null>(null)
-  const [editForm,      setEditForm]      = useState<Partial<User>>({})
-  const [alert,         setAlert]         = useState<AlertState | null>(null)
+  const [busqueda, setBusqueda] = useState('')
+  const [filtroRol, setFiltroRol] = useState('Todos')
+  const [modalUser, setModalUser] = useState<UsuarioListadoDto | null>(null)
+  const [modalEliminar, setModalEliminar] = useState<UsuarioListadoDto | null>(null)
+  const [editForm, setEditForm] = useState<{ nombre?: string; correo?: string; telefono?: string; rol?: Rol }>({})
+  const [alert, setAlert] = useState<AlertState | null>(null)
 
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter((u) => {
@@ -34,18 +37,27 @@ function ManageUsers() {
     })
   }, [usuarios, busqueda, filtroRol])
 
-  const abrirEditar = (u: User) => {
-    setEditForm({ nombre: u.nombre, correo: u.correo, telefono: u.telefono, rol: u.rol })
+  const abrirEditar = (u: UsuarioListadoDto) => {
+    setEditForm({ nombre: u.nombre, correo: u.correo, telefono: u.telefono ?? '', rol: u.rol })
     setModalUser(u)
   }
 
   const guardarEdicion = () => {
     if (!modalUser) return
+    const payload: ActualizarUsuarioDto = {
+      nombre: editForm.nombre,
+      correo: editForm.correo,
+      telefono: editForm.telefono,
+      rolId: editForm.rol ? ROL_A_ID[editForm.rol] : undefined,
+    }
     updateUsuario(
-      { id: modalUser.id, data: editForm },
+      { id: modalUser.id, data: payload },
       {
         onSuccess: () => { setModalUser(null); setAlert({ type: 'success', message: 'Usuario actualizado.' }) },
-        onError:   () => setAlert({ type: 'error', message: 'Error al actualizar el usuario.' }),
+        onError: (err: any) => {
+          const mensaje = err?.response?.data?.mensaje ?? 'Error al actualizar el usuario.'
+          setAlert({ type: 'error', message: mensaje })
+        },
       }
     )
   }
@@ -54,7 +66,12 @@ function ManageUsers() {
     if (!modalEliminar) return
     deleteUsuario(modalEliminar.id, {
       onSuccess: () => { setModalEliminar(null); setAlert({ type: 'success', message: 'Usuario eliminado.' }) },
-      onError:   () => setAlert({ type: 'error', message: 'Error al eliminar el usuario.' }),
+      onError: (err: any) => {
+        // 400: es tu propia cuenta o tiene rol Admin. 409: tiene suscripción viva o cobros registrados.
+        const mensaje = err?.response?.data?.mensaje ?? 'Error al eliminar el usuario.'
+        setModalEliminar(null)
+        setAlert({ type: 'error', message: mensaje })
+      },
     })
   }
 
@@ -72,17 +89,15 @@ function ManageUsers() {
 
   return (
     <div className="bg-[#f8f9ff] min-h-screen">
-
       <div className="border-b border-[#c6c6cd] bg-[#eff4ff]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <p className="text-[#006398] text-sm font-medium mb-1">Administración</p>
           <h1 className="text-3xl font-bold text-[#0b1c30]">Gestión de usuarios</h1>
-          <p className="text-[#45464d] text-sm mt-1">{usuarios.length} usuarios registrados</p>
+          <p className="text-[#45464d] text-sm mt-1">{usuarios.length} usuarios en esta página</p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-
         {alert && (
           <div className="mb-5">
             <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -102,7 +117,7 @@ function ManageUsers() {
             />
           </div>
           <div className="flex gap-2">
-            {['Todos', 'Admin', 'Usuario'].map((rol) => (
+            {['Todos', 'Admin', 'Usuario', 'Educador'].map((rol) => (
               <button
                 key={rol}
                 onClick={() => setFiltroRol(rol)}
@@ -118,13 +133,13 @@ function ManageUsers() {
           </div>
         </div>
 
-        {/* Tabla */}
+        {/* Tabla — sin columna "Estado" */}
         <div className="bg-[#e5eeff] border border-[#c6c6cd] rounded overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#c6c6cd]">
-                  {['Usuario', 'Rol', 'Plan', 'Estado', 'Acciones'].map((h) => (
+                  {['Usuario', 'Rol', 'Plan', 'Acciones'].map((h) => (
                     <th key={h} className="text-left text-xs font-semibold text-[#45464d] uppercase tracking-wider px-5 py-3.5">{h}</th>
                   ))}
                 </tr>
@@ -152,14 +167,6 @@ function ManageUsers() {
                       <span className={`text-xs px-2.5 py-1 rounded font-medium inline-block w-20 text-center ${
                         u.esPremium ? 'bg-[#85f8c4]/40 text-[#005137]' : 'bg-[#eff4ff] text-[#45464d]'
                       }`}>{u.esPremium ? 'Premium' : 'Gratuito'}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <button
-                        onClick={() => toggleEstado(u.id)}
-                        className={`relative w-10 h-5 rounded-full transition-all ${u.estado ? 'bg-[#069669]' : 'bg-[#c6c6cd]'}`}
-                      >
-                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${u.estado ? 'left-5' : 'left-0.5'}`} />
-                      </button>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
@@ -195,9 +202,9 @@ function ManageUsers() {
         {modalUser && (
           <div className="space-y-4">
             {([
-              { label: 'Nombre',   name: 'nombre',   type: 'text'  },
-              { label: 'Correo',   name: 'correo',   type: 'email' },
-              { label: 'Teléfono', name: 'telefono', type: 'tel'   },
+              { label: 'Nombre', name: 'nombre', type: 'text' },
+              { label: 'Correo', name: 'correo', type: 'email' },
+              { label: 'Teléfono', name: 'telefono', type: 'tel' },
             ] as const).map(({ label, name, type }) => (
               <div key={name}>
                 <label className="block text-xs font-medium text-[#45464d] mb-2">{label}</label>
@@ -213,11 +220,12 @@ function ManageUsers() {
               <label className="block text-xs font-medium text-[#45464d] mb-2">Rol</label>
               <select
                 value={editForm.rol ?? 'Usuario'}
-                onChange={(e) => setEditForm({ ...editForm, rol: e.target.value as 'Admin' | 'Usuario' })}
+                onChange={(e) => setEditForm({ ...editForm, rol: e.target.value as Rol })}
                 className="w-full bg-[#f8f9ff] border border-[#c6c6cd] text-[#0b1c30] rounded px-4 py-2.5 text-sm outline-none focus:border-[#006398] transition-all"
               >
                 <option value="Usuario">Usuario</option>
                 <option value="Admin">Admin</option>
+                <option value="Educador">Educador</option>
               </select>
             </div>
             <div className="flex justify-end gap-3 pt-2">
@@ -251,6 +259,9 @@ function ManageUsers() {
           <div>
             <p className="text-[#45464d] text-sm mb-6">
               ¿Eliminar a <span className="text-[#0b1c30] font-semibold">{modalEliminar.nombre}</span>? Esta acción no se puede deshacer.
+            </p>
+            <p className="text-[#76777d] text-xs mb-6">
+              No se puede eliminar si es tu propia cuenta, tiene rol Admin, o tiene una suscripción con cobros registrados.
             </p>
             <div className="flex justify-end gap-3">
               <button

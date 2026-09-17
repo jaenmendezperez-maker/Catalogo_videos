@@ -1,0 +1,15 @@
+meta {
+  name: Obtener usuario por id (Admin)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/usuarios/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{usuarioId}}
+}

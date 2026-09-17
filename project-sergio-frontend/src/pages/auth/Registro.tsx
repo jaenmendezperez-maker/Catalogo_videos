@@ -38,6 +38,8 @@ function Registro() {
       return 'Por favor completa todos los campos.'
     if (form.contrasena.length < 6)
       return 'La contraseña debe tener al menos 6 caracteres.'
+    if (!/[A-Z]/.test(form.contrasena) || !/[a-z]/.test(form.contrasena) || !/[0-9]/.test(form.contrasena))
+      return 'La contraseña debe incluir mayúscula, minúscula y número.'
     if (form.contrasena !== form.confirmar)
       return 'Las contraseñas no coinciden.'
     return null
@@ -49,15 +51,19 @@ function Registro() {
     if (validationError) { setError(validationError); return }
     setLoading(true)
     try {
-      const { user, token, refreshToken } = await register({
-        nombre: form.nombre, correo: form.correo,
-        telefono: form.telefono, contrasena: form.contrasena,
+      const data = await register({
+        nombre: form.nombre,
+        correo: form.correo,
+        telefono: form.telefono,
+        contrasena: form.contrasena,
       })
-      setAuth(user, token, refreshToken)
-      const destino = user.rol === 'Admin' ? '/admin' : '/dashboard'
+      setAuth(data)
+      const destino = data.rol === 'Admin' ? '/admin' : '/dashboard'
       navigate(destino, { replace: true })
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al registrarse.')
+      // 400: correo ya registrado / regla de validación. 409: colisión concurrente.
+      const mensaje = (err as any)?.response?.data?.mensaje ?? 'Error al registrarse.'
+      setError(mensaje)
     } finally {
       setLoading(false)
     }

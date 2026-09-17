@@ -1,0 +1,29 @@
+meta {
+  name: Mi suscripcion
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/suscripciones/mia
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 200 aunque no haya suscripcion", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.estado).to.be.a("string");
+  });
+}
+
+docs {
+  estado: SinSuscripcion, PendientePago, Activa, Pausada, Suspendida,
+  Cancelada, Abandonada o ErrorCreacion.
+
+  tieneAcceso es lo que decide si puede ver premium, no el estado:
+  una suscripcion Activa con el cobro rechazado no da acceso, y una
+  Cancelada conserva el acceso hasta el fin del periodo pagado.
+
+  primerCobroPendiente: autorizada pero sin cobro aprobado todavia.
+}

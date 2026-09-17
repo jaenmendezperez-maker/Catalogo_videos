@@ -1,0 +1,96 @@
+# Levanta la API junto a su propio PostgreSQL. No toca la base de datos local.
+#   cp .env.example .env   (y rellena JWT_SECRET_KEY y POSTGRES_PASSWORD)
+#   docker compose up --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sergio-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-DBsergioAPI}
+      POSTGRES_USER:     ${POSTGRES_USER:-sergio}
+      # La sintaxis :? aborta el "up" si la variable falta, en vez de
+      # arrancar en silencio con una contraseña vacía.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # 5434 en el host a propósito: 5432 y 5433 ya están ocupados en esta máquina.
+      - "${POSTGRES_PUERTO_HOST:-5434}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sergio} -d ${POSTGRES_DB:-DBsergioAPI}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sergio-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      DISABLE_HTTPS_REDIRECT: "true"
+
+      # El doble guion bajo es como .NET mapea "Seccion:Clave" a variable de entorno.
+      # "db" es el nombre del servicio: Docker lo resuelve por DNS interno.
+      # Maximum Pool Size acotado por debajo del max_connections de Postgres (100),
+      # para dejar sitio a psql y a las migraciones. Sin fijarlo, Npgsql usa 100 y una
+      # sola instancia agota el servidor. Timeout corto para fallar rapido en vez de
+      # encolar peticiones esperando conexion.
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-DBsergioAPI};Username=${POSTGRES_USER:-sergio};Password=${POSTGRES_PASSWORD};Maximum Pool Size=${DB_MAX_POOL:-40};Timeout=10;Command Timeout=30"
+
+      Jwt__SecretKey:          ${JWT_SECRET_KEY:?falta JWT_SECRET_KEY en .env}
+      Jwt__Issuer:             ${JWT_ISSUER:-SergioApi}
+      Jwt__Audience:           ${JWT_AUDIENCE:-SergioApiClientes}
+      Jwt__AccessTokenMinutos: ${JWT_ACCESS_MINUTOS:-60}
+      Jwt__RefreshTokenDias:   ${JWT_REFRESH_DIAS:-7}
+
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+
+      Bunny__ApiKey:       ${BUNNY_API_KEY:-}
+      Bunny__LibraryId:    ${BUNNY_LIBRARY_ID:-0}
+      Bunny__CDNHostname:  ${BUNNY_CDN_HOSTNAME:-}
+      Bunny__ApiBaseUrl:   ${BUNNY_API_BASE_URL:-https://video.bunnycdn.com}
+      # Sin esta clave no hay paywall: fuera de Development la API se niega
+      # a devolver URLs de reproducción sin firmar.
+      Bunny__TokenAuthKey: ${BUNNY_TOKEN_AUTH_KEY:-}
+
+      # Mercado Pago. Fuera de Development es obligatorio (la API no arranca sin el)
+      # y se rechaza un Access Token de prueba (TEST-).
+      MercadoPago__AccessToken:   ${MP_ACCESS_TOKEN:-}
+      MercadoPago__WebhookSecret: ${MP_WEBHOOK_SECRET:-}
+      MercadoPago__PrecioMensual: ${MP_PRECIO_MENSUAL:-99}
+      MercadoPago__BackUrl:       ${MP_BACK_URL:-}
+
+      # Los arrays se pasan por índice: Seccion__Clave__0, __1, ...
+      Cors__AllowedOrigins__0: ${CORS_ORIGEN_1:-http://localhost:5173}
+      Cors__AllowedOrigins__1: ${CORS_ORIGEN_2:-http://localhost:3000}
+
+      # Vacio por defecto: sin proxies declarados NO se hace caso a X-Forwarded-For
+      # y el rate limiter usa la IP real de la conexion, que no se puede falsificar.
+      Red__ProxiesDeConfianza__0: ${RED_PROXY_1:-}
+      Red__RedesDeConfianza__0:   ${RED_CIDR_1:-}
+
+      # Aplica las migraciones pendientes al arrancar, para que un solo
+      # comando deje el entorno utilizable.
+      RUN_MIGRATIONS: "true"
+    ports:
+      - "${API_PUERTO_HOST:-8081}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/videos || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  pgdata:
+    name: sergio_pgdata

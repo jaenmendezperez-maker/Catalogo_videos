@@ -1,0 +1,23 @@
+meta {
+  name: Eliminar video (Admin)
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/api/videos/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 999
+}
+
+docs {
+  Borra primero en Bunny y despues en la base de datos, sin transaccion que
+  englobe ambos pasos: si el borrado en la base falla, el video ya no existe
+  en Bunny. Ver docs/04-decisiones-de-diseno.md.
+
+  El id va fijo a 999 para no borrar nada al ejecutar la carpeta completa.
+}

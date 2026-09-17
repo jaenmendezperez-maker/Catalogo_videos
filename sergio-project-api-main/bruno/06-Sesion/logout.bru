@@ -1,0 +1,42 @@
+meta {
+  name: Logout
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/auth/logout
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 204) {
+    bru.setEnvVar("accessToken", "");
+    bru.setEnvVar("refreshToken", "");
+  }
+}
+
+tests {
+  test("responde 204", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Ultima peticion de la coleccion: limpia accessToken y refreshToken del entorno.
+
+  Solo revoca el token si pertenece al usuario del access token.
+  Devuelve 204 aunque el token no exista: distinguir los casos permitiria
+  averiguar que refresh tokens estan activos.
+}

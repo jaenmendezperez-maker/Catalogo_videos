@@ -1,69 +1,43 @@
 // src/api/authApi.ts
 import api from './axios'
-import type { User, AuthResponse, LoginPayload, RegisterPayload } from '../types'
+import type { UsuarioAutenticadoDto, RefreshResponseDto, LoginPayload, RegisterPayload, PerfilDto } from '../types'
 
-// ── Tipos extendidos con refreshToken ─────────────────────
-
-export interface AuthResponseWithRefresh extends AuthResponse {
-  refreshToken: string
+export async function login(payload: LoginPayload): Promise<UsuarioAutenticadoDto> {
+  const res = await api.post<UsuarioAutenticadoDto>('/auth/login', payload)
+  return res.data
 }
 
-// ── Mock ───────────────────────────────────────────────────
-
-const MOCK_USERS: (User & { contrasena: string })[] = [
-  { id: 1, nombre: 'Admin Test',    correo: 'admin@test.com',    contrasena: '123456', rol: 'Admin',   esPremium: true,  estado: true, fotoPerfil: null },
-  { id: 2, nombre: 'Usuario Test',  correo: 'usuario@test.com',  contrasena: '123456', rol: 'Usuario', esPremium: false, estado: true, fotoPerfil: null },
-]
-
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
-
-async function mockLogin(correo: string, contrasena: string): Promise<AuthResponseWithRefresh> {
-  await delay(800)
-  const found = MOCK_USERS.find(u => u.correo === correo && u.contrasena === contrasena)
-  if (!found) throw new Error('Correo o contraseña incorrectos')
-  const { contrasena: _, ...safeUser } = found
-  return {
-    user:         safeUser,
-    token:        `mock-token-${safeUser.id}`,
-    refreshToken: `mock-refresh-${safeUser.id}`,   // ← el backend real devolverá esto
-  }
+export async function register(datos: RegisterPayload): Promise<UsuarioAutenticadoDto> {
+  const res = await api.post<UsuarioAutenticadoDto>('/auth/registro', datos)
+  return res.data
 }
 
-async function mockRegister(datos: RegisterPayload): Promise<AuthResponseWithRefresh> {
-  await delay(800)
-  const existe = MOCK_USERS.find(u => u.correo === datos.correo)
-  if (existe) throw new Error('Este correo ya está registrado')
-  const newUser: User = {
-    id: MOCK_USERS.length + 1,
-    nombre: datos.nombre,
-    correo: datos.correo,
-    rol: 'Usuario',
-    esPremium: false,
-    estado: true,
-    fotoPerfil: null,
-  }
-  return {
-    user:         newUser,
-    token:        `mock-token-${newUser.id}`,
-    refreshToken: `mock-refresh-${newUser.id}`,
-  }
+export async function loginGoogle(idToken: string): Promise<UsuarioAutenticadoDto> {
+  const res = await api.post<UsuarioAutenticadoDto>('/auth/login-google', { idToken })
+  return res.data
 }
 
-// ── Funciones exportadas ───────────────────────────────────
-
-export async function login(payload: LoginPayload): Promise<AuthResponseWithRefresh> {
-  // TODO: const res = await api.post<AuthResponseWithRefresh>('/auth/login', payload)
-  // return res.data
-  return mockLogin(payload.correo, payload.contrasena)
+export async function refresh(refreshToken: string): Promise<RefreshResponseDto> {
+  const res = await api.post<RefreshResponseDto>('/auth/refresh', { refreshToken })
+  return res.data
 }
 
-export async function register(datos: RegisterPayload): Promise<AuthResponseWithRefresh> {
-  // TODO: const res = await api.post<AuthResponseWithRefresh>('/auth/registro', datos)
-  // return res.data
-  return mockRegister(datos)
+export async function logout(refreshToken: string): Promise<void> {
+  // 204 siempre, exista el token o no
+  await api.post('/auth/logout', { refreshToken })
 }
 
-export async function getMe(): Promise<User> {
-  const res = await api.get<User>('/auth/me')
+export async function cambiarPassword(payload: {
+  contrasenaActual: string
+  contrasenaNueva: string
+  confirmarContrasena: string
+}): Promise<void> {
+  // 204. Revoca TODOS los refresh tokens del usuario.
+  await api.post('/auth/cambiar-password', payload)
+}
+
+export async function getPerfil(): Promise<PerfilDto> {
+  // No existe /auth/me — el perfil real es este endpoint
+  const res = await api.get<PerfilDto>('/usuarios/perfil')
   return res.data
 }

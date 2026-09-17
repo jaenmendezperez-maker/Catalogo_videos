@@ -1,0 +1,52 @@
+meta {
+  name: Suscribirme
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/suscripciones
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "correoMercadoPago": null
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("suscripcionId", res.body.suscripcionId);
+    bru.setEnvVar("initPoint", res.body.initPoint);
+
+    // Deja preparado el webhook simulado para esta suscripcion.
+    const preapprovalId = (res.body.initPoint.split("preapproval_id=")[1] || "").split("&")[0];
+    if (preapprovalId) {
+      bru.setEnvVar("mpTipo", "subscription_preapproval");
+      bru.setEnvVar("mpRecursoId", preapprovalId);
+    }
+  }
+}
+
+tests {
+  test("devuelve un enlace de pago", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.initPoint).to.be.a("string").and.not.empty;
+  });
+}
+
+docs {
+  Abre el initPoint devuelto en el navegador para pagar en Mercado Pago.
+
+  En el sandbox, correoMercadoPago debe ser el correo del COMPRADOR de prueba.
+  Con null se usa el correo de tu cuenta.
+
+  Repetir la peticion devuelve la misma suscripcion pendiente.
+  409 si ya tienes una activa; 502 si Mercado Pago no esta configurado o falla.
+}

@@ -1,0 +1,51 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "correo": "{{correoAdmin}}",
+    "contrasena": "{{passwordAdmin}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("accessToken",  res.body.token);
+    bru.setEnvVar("refreshToken", res.body.refreshToken);
+    bru.setEnvVar("usuarioId",    res.body.id);
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("devuelve refreshToken", function () {
+    expect(res.body.refreshToken).to.be.a("string").and.not.empty;
+  });
+}
+
+docs {
+  Ejecuta esta peticion primero: guarda accessToken y refreshToken en el entorno
+  y el resto de la coleccion los hereda.
+
+  El test de refreshToken es la prueba de regresion del fallo original:
+  el token se generaba y se guardaba en la base de datos, pero nunca se devolvia,
+  asi que el cliente no podia renovar la sesion nunca.
+
+  Limitado a 8 intentos por minuto y por IP.
+}

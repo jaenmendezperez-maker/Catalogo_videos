@@ -1,0 +1,34 @@
+meta {
+  name: Login con Google
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/auth/login-google
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "idToken": "{{googleIdToken}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("accessToken",  res.body.token);
+    bru.setEnvVar("refreshToken", res.body.refreshToken);
+  }
+}
+
+docs {
+  Requiere Google:ClientId configurado en el servidor; si falta, responde 500.
+  Se rechazan los tokens cuyo correo no este verificado en Google.
+  Pon un id_token real en la variable secreta googleIdToken del entorno.
+}

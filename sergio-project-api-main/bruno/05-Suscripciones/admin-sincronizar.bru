@@ -1,0 +1,20 @@
+meta {
+  name: Forzar sincronizacion (Admin)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/suscripciones/admin/:id/sincronizar
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{suscripcionId}}
+}
+
+docs {
+  Relee de Mercado Pago una suscripcion concreta. Util si se sospecha que se
+  perdio un webhook.
+}

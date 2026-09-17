@@ -1,0 +1,45 @@
+meta {
+  name: Listar videos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/videos?pagina=1&porPagina=20
+  body: none
+  auth: none
+}
+
+params:query {
+  pagina: 1
+  porPagina: 20
+  ~busqueda: teoria
+  ~incluirNoPublicados: true
+}
+
+script:post-response {
+  if (res.getStatus() === 200 && res.body.datos.length > 0) {
+    bru.setEnvVar("videoId", res.body.datos[0].id);
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("no expone identificadores de Bunny", function () {
+    res.body.datos.forEach(function (v) {
+      expect(v).to.not.have.property("bunnyVideoId");
+      expect(v).to.not.have.property("bunnyLibraryId");
+    });
+  });
+}
+
+docs {
+  Publico. Solo devuelve videos con esPublico = true.
+
+  incluirNoPublicados unicamente surte efecto con un token de rol Admin.
+  Con usuario normal o sin token se ignora: el parametro se resuelve en el
+  servidor comparando el rol, nunca se confia en lo que llegue del cliente.
+}

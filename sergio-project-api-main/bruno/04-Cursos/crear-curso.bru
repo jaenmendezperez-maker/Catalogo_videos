@@ -1,0 +1,33 @@
+meta {
+  name: Crear curso (Admin)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/cursos
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Curso creado desde Bruno",
+    "esPremium": false
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setEnvVar("cursoId", res.body.id);
+  }
+}
+
+docs {
+  Crea la coleccion en Bunny y despues la guarda localmente.
+  Necesita credenciales reales de Bunny.
+}

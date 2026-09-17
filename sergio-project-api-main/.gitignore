@@ -1,0 +1,23 @@
+# Carpetas de compilación
+bin/
+obj/
+
+# Configuraciones personales de IDE
+.vs/
+.vscode/
+*.user
+
+# Configuración local con datos sensibles.
+# appsettings.json SÍ se versiona: no contiene secretos, solo valores por defecto.
+# Los secretos van en User Secrets (local) o variables de entorno (Docker).
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+
+# Variables de entorno de Docker
+.env
+
+# Paquetes NuGet
+packages/
+bruno/assets/*
+!bruno/assets/.gitkeep

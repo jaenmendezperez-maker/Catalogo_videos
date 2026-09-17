@@ -1,0 +1,40 @@
+meta {
+  name: Reproducir video
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/videos/:id/reproducir
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{videoId}}
+}
+
+tests {
+  test("responde 200 con una url de reproduccion", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.url).to.be.a("string");
+  });
+
+  test("la url caduca", function () {
+    expect(res.body.expiraEn).to.be.a("string");
+  });
+}
+
+docs {
+  Unica via legitima para obtener acceso al contenido: los identificadores de
+  Bunny ya no viajan en los DTOs publicos.
+
+  Codigos:
+    401  sin sesion
+    403  autenticado pero sin suscripcion premium, sobre un video premium
+    404  el video no existe o es un borrador y no eres Admin
+
+  La URL va firmada y caduca a las 2 horas. Si el servidor no tiene
+  Bunny:TokenAuthKey configurada, fuera de Development devuelve 500 a proposito:
+  servir una URL sin firmar seria el bypass del paywall.
+}

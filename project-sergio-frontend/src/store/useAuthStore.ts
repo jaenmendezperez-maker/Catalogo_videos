@@ -1,17 +1,30 @@
 // src/store/useAuthStore.ts
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User } from '../types'
+import type { UsuarioAutenticadoDto, Rol } from '../types'
+
+// Lo que realmente guardamos del usuario en sesión — es un subconjunto
+// de UsuarioAutenticadoDto sin los tokens (esos van aparte)
+export interface UsuarioSesion {
+  id: number
+  nombre: string
+  correo: string
+  telefono: string | null
+  fotoPerfil: string | null
+  rol: Rol
+  esPremium: boolean
+}
 
 interface AuthStore {
-  user:             User | null
-  token:            string | null
-  refreshToken:     string | null
-  isAuthenticated:  boolean
+  user:            UsuarioSesion | null
+  token:           string | null
+  refreshToken:    string | null
+  isAuthenticated: boolean
 
-  login:      (user: User, token: string, refreshToken?: string) => void
+  /** Login/registro devuelven un solo objeto (UsuarioAutenticadoDto) con todo junto */
+  login:      (data: UsuarioAutenticadoDto) => void
   logout:     () => void
-  updateUser: (data: Partial<User>) => void
+  updateUser: (data: Partial<UsuarioSesion>) => void
   setTokens:  (token: string, refreshToken: string) => void
 }
 
@@ -23,16 +36,14 @@ const useAuthStore = create<AuthStore>()(
       refreshToken:    null,
       isAuthenticated: false,
 
-      login: (user, token, refreshToken = '') => {
-        // ── MOCK CRUD TEMPORAL ──
-        // Si la base de datos aún no devuelve 'avatar', le asignamos una ruta de assets por defecto.
-        // Cuando tu backend empiece a mandarlo, user.avatar existirá y tomará el real.
-        const userDbData = {
-          ...user,
-          avatar: user.avatar || '/assets/images/sergio.png' // Cambia esta ruta por la que quieras probar
-        };
-
-        set({ user: userDbData, token, refreshToken, isAuthenticated: true })
+      login: (data) => {
+        const { token, refreshToken, fechaExpiracion, ...usuario } = data
+        set({
+          user: usuario,
+          token,
+          refreshToken,
+          isAuthenticated: true,
+        })
       },
 
       logout: () => {

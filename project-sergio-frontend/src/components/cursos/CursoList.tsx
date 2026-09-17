@@ -1,8 +1,9 @@
+// src/components/cursos/CursoList.tsx
 import CursoCard from './CursoCard'
-import type { Curso } from '@/types'
+import type { CursoVistasPreviaDto } from '@/types'
 
 interface Props {
-  cursos: Curso[]
+  cursos: CursoVistasPreviaDto[]
   loading?: boolean
 }
 

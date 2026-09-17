@@ -1,0 +1,20 @@
+meta {
+  name: Eliminar usuario (Admin)
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/usuarios/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 999
+}
+
+docs {
+  No se puede eliminar la propia cuenta ni una cuenta con rol Admin: ambas dan 400.
+  El id va fijo a 999 a proposito, para no borrar por accidente al ejecutar la carpeta entera.
+}

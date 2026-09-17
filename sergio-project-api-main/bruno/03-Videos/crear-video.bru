@@ -1,0 +1,37 @@
+meta {
+  name: Crear video (Admin)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/videos
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  Titulo: Video de prueba desde Bruno
+  Descripcion: Carga de verificacion
+  EsPremium: false
+  EsPublico: false
+  Categoria: demo
+  ~VideoCursoId: {{cursoId}}
+  archivo: @file(assets/demo.mp4)
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setEnvVar("videoId", res.body.id);
+  }
+}
+
+docs {
+  Requiere un mp4 en bruno/assets/demo.mp4 (esa carpeta esta en .gitignore).
+  La ruta de @file() es relativa a la raiz de la coleccion.
+
+  Limite de subida: 5 GB, fijado con [RequestSizeLimit] solo en este endpoint.
+  El resto de la API conserva el limite por defecto de Kestrel.
+
+  Necesita credenciales reales de Bunny: sin ellas la llamada a Bunny falla.
+}

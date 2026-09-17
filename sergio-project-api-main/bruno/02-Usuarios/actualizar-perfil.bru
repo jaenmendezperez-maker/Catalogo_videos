@@ -1,0 +1,28 @@
+meta {
+  name: Actualizar mi perfil
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/usuarios/perfil
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Nombre actualizado",
+    "telefono": "5599887766"
+  }
+}
+
+docs {
+  Todos los campos son opcionales: solo se actualiza lo que envies.
+  Cambiar el correo revoca todas las sesiones, porque el correo es la identidad de login.
+  Un rolId enviado aqui se ignora: el DTO de perfil propio no lo contiene.
+}

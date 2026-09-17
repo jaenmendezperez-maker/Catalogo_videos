@@ -1,29 +1,27 @@
 // src/hooks/useCursos.ts
 // Wrapper sobre useCursos de cursosApi con lógica de filtrado local.
-// Útil para el catálogo donde los filtros son del lado del cliente.
+// Filtros reducidos a lo que el backend realmente expone (ver types/index.ts):
+// categoria, instructor, nivel, alumnos y duracion no existen en CursoVistasPreviaDto.
 
 import { useState, useMemo } from 'react'
 import { useCursos as useCursosQuery } from '../api/cursosApi'
-import type { Curso, NivelCurso, CategoriaCurso } from '../types'
 
 interface FiltrosCursos {
-  busqueda:  string
-  categoria: CategoriaCurso | 'Todas'
-  nivel:     NivelCurso     | 'Todos'
-  premium:   'todos' | 'solo-premium' | 'solo-gratis'
-  orden:     'popular' | 'reciente' | 'duracion'
+  busqueda: string
+  premium: 'todos' | 'solo-premium' | 'solo-gratis'
+  orden: 'nombre' | 'videos'
 }
 
 const FILTROS_INICIALES: FiltrosCursos = {
-  busqueda:  '',
-  categoria: 'Todas',
-  nivel:     'Todos',
-  premium:   'todos',
-  orden:     'popular',
+  busqueda: '',
+  premium: 'todos',
+  orden: 'nombre',
 }
 
 export function useCursosFiltrados() {
-  const { data: cursos = [], isLoading, error } = useCursosQuery()
+  const { data, isLoading, error } = useCursosQuery()
+  const cursos = data?.datos ?? [] // useCursosQuery ahora devuelve PaginatedResponse, no un array directo
+
   const [filtros, setFiltros] = useState<FiltrosCursos>(FILTROS_INICIALES)
 
   const cursosFiltrados = useMemo(() => {
@@ -31,42 +29,30 @@ export function useCursosFiltrados() {
 
     if (filtros.busqueda.trim()) {
       const q = filtros.busqueda.toLowerCase()
-      resultado = resultado.filter(c =>
-        c.nombre?.toLowerCase().includes(q)      ||
-        c.categoria?.toLowerCase().includes(q)   ||
-        c.instructor?.toLowerCase().includes(q)
-      )
+      resultado = resultado.filter((c) => c.nombre?.toLowerCase().includes(q))
     }
 
-    if (filtros.categoria !== 'Todas')
-      resultado = resultado.filter(c => c.categoria === filtros.categoria)
-
-    if (filtros.nivel !== 'Todos')
-      resultado = resultado.filter(c => c.nivel === filtros.nivel)
-
     if (filtros.premium === 'solo-premium')
-      resultado = resultado.filter(c => c.esPremium)
+      resultado = resultado.filter((c) => c.esPremium)
     if (filtros.premium === 'solo-gratis')
-      resultado = resultado.filter(c => !c.esPremium)
+      resultado = resultado.filter((c) => !c.esPremium)
 
-    if (filtros.orden === 'popular')
-      resultado.sort((a, b) => (b.alumnos ?? 0) - (a.alumnos ?? 0))
-    if (filtros.orden === 'duracion')
-      resultado.sort((a, b) => parseInt(a.duracion ?? '0') - parseInt(b.duracion ?? '0'))
+    if (filtros.orden === 'nombre')
+      resultado.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    if (filtros.orden === 'videos')
+      resultado.sort((a, b) => b.cantidadVideos - a.cantidadVideos)
 
     return resultado
   }, [cursos, filtros])
 
   const hayFiltrosActivos =
-    filtros.busqueda !== ''       ||
-    filtros.categoria !== 'Todas' ||
-    filtros.nivel !== 'Todos'     ||
+    filtros.busqueda !== '' ||
     filtros.premium !== 'todos'
 
   const resetFiltros = () => setFiltros(FILTROS_INICIALES)
 
   const setFiltro = <K extends keyof FiltrosCursos>(key: K, value: FiltrosCursos[K]) => {
-    setFiltros(prev => ({ ...prev, [key]: value }))
+    setFiltros((prev) => ({ ...prev, [key]: value }))
   }
 
   return {

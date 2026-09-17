@@ -1,0 +1,65 @@
+meta {
+  name: Webhook de Mercado Pago (simulado y firmado)
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/webhooks/mercadopago?data.id={{mpRecursoId}}&type={{mpTipo}}
+  body: json
+  auth: none
+}
+
+params:query {
+  data.id: {{mpRecursoId}}
+  type: {{mpTipo}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "{{mpTipo}}",
+    "action": "updated",
+    "data": { "id": "{{mpRecursoId}}" }
+  }
+}
+
+script:pre-request {
+  // Firma igual que Mercado Pago:
+  //   manifiesto = "id:{data.id};request-id:{x-request-id};ts:{ts};"
+  //   x-signature = "ts={ts},v1={HMAC-SHA256 hex del manifiesto con la clave secreta}"
+  const CryptoJS  = require("crypto-js");
+  const ts        = Math.floor(Date.now() / 1000).toString();
+  const requestId = "bruno-" + Date.now();
+  const dataId    = String(bru.getEnvVar("mpRecursoId") || "").toLowerCase();
+  const secreto   = bru.getEnvVar("mpWebhookSecret") || "";
+
+  const manifiesto = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const v1 = CryptoJS.HmacSHA256(manifiesto, secreto).toString(CryptoJS.enc.Hex);
+
+  req.setHeader("x-signature", `ts=${ts},v1=${v1}`);
+  req.setHeader("x-request-id", requestId);
+}
+
+tests {
+  test("firma aceptada", function () {
+    expect(res.getStatus()).to.not.equal(401);
+  });
+}
+
+docs {
+  Simula una notificacion de Mercado Pago con firma valida, para probar el
+  webhook sin el sandbox. Requiere en el entorno:
+    mpWebhookSecret  la misma clave que MercadoPago:WebhookSecret de la API
+    mpTipo           subscription_preapproval | subscription_authorized_payment | payment
+    mpRecursoId      el id del preapproval, del cobro o del pago
+
+  La API NUNCA se cree el cuerpo: vuelve a consultar el estado en Mercado Pago.
+  Por eso un webhook simulado de un recurso que Mercado Pago no conoce
+  devuelve 500 (suscripcion no encontrada) y no concede nada.
+
+  Necesita el modo Developer de Bruno para poder usar require("crypto-js").
+}

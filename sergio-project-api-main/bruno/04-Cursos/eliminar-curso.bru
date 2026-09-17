@@ -1,0 +1,22 @@
+meta {
+  name: Eliminar curso (Admin)
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/cursos/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 999
+}
+
+docs {
+  Los videos de la coleccion NO se borran: la relacion esta configurada como
+  SetNull, asi que quedan sin coleccion.
+
+  El id va fijo a 999 para no borrar nada al ejecutar la carpeta completa.
+}

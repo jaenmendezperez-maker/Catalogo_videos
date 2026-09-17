@@ -1,0 +1,39 @@
+meta {
+  name: Actualizar usuario (Admin)
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/api/usuarios/:id
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+params:path {
+  id: {{usuarioId}}
+}
+
+body:json {
+  {
+    "nombre": "Editado por admin"
+  }
+}
+
+docs {
+  OJO: usuarioId apunta al usuario que hizo login, asi que por defecto esta
+  peticion se edita a SI MISMA. El campo rolId se omite a proposito: mandar
+  "rolId": 2 aqui degradaba la propia cuenta de Admin a Usuario y dejaba el
+  resto de la coleccion sin permisos.
+
+  Para probar el cambio de rol, apunta el id a OTRO usuario y anade:
+    "rolId": 2
+
+  rolId admitidos: 1 Admin, 2 Usuario, 3 Educador.
+  Un rolId inexistente devuelve 400 con un mensaje claro (antes era un 500 por
+  violacion de clave foranea).
+}

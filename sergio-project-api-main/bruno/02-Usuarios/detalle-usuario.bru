@@ -1,0 +1,20 @@
+meta {
+  name: Detalle de usuario (Admin)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/usuarios/:id/detalle
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{usuarioId}}
+}
+
+docs {
+  historialSuscripciones sale siempre vacio y los contadores en cero:
+  el modulo de suscripciones (MercadoPago) todavia no esta implementado.
+}

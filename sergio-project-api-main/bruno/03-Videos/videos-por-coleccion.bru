@@ -1,0 +1,20 @@
+meta {
+  name: Videos de una coleccion
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/videos/coleccion/:videoCursoId?pagina=1&porPagina=20
+  body: none
+  auth: none
+}
+
+params:path {
+  videoCursoId: {{cursoId}}
+}
+
+params:query {
+  pagina: 1
+  porPagina: 20
+}

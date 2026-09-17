@@ -1,0 +1,23 @@
+meta {
+  name: Estadisticas de video (Admin)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/videos/:id/estadisticas
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{videoId}}
+}
+
+docs {
+  Es el unico endpoint que sigue exponiendo bunnyVideoId, y solo para Admin.
+
+  vistas, tiempoPromedioVista y progresoEncoding se quedan en cero:
+  sin el webhook de Bunny nada actualiza esos campos despues de la subida.
+  Ver docs/04-decisiones-de-diseno.md.
+}

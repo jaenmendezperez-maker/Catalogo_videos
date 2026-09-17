@@ -1,0 +1,37 @@
+meta {
+  name: Actualizar video (Admin)
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/api/videos/:id
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+params:path {
+  id: {{videoId}}
+}
+
+body:json {
+  {
+    "titulo": "Titulo actualizado desde Bruno"
+  }
+}
+
+tests {
+  test("acepta actualizaciones parciales", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Todos los campos son opcionales. Este test es la regresion de un fallo previo:
+  esPremium era bool? pero llevaba [Required], asi que omitirlo daba 400 y
+  ninguna actualizacion parcial funcionaba.
+}

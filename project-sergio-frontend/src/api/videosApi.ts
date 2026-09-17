@@ -1,57 +1,71 @@
 // src/api/videosApi.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from './axios'
-import type { Video } from '../types'
+import type {
+  VideoVistasPreviaDto,
+  VideoDetalleDto,
+  VideoEstadisticasDto,
+  VideoReproduccionDto,
+  CrearVideoDto,
+  ActualizarVideoDto,
+  PaginatedResponse,
+} from '../types'
 
 // ── Query Keys ─────────────────────────────────────────────
 
 export const videoKeys = {
-  all:         ()           => ['videos']                       as const,
-  byCurso:     (cursoId: number) => ['videos', 'curso', cursoId] as const,
-  detail:      (id: number) => ['videos', 'detail', id]         as const,
+  all:        ()                 => ['videos'] as const,
+  list:       (params: Record<string, unknown> = {}) => ['videos', 'list', params] as const,
+  byCurso:    (cursoId: number, params: Record<string, unknown> = {}) =>
+                ['videos', 'curso', cursoId, params] as const,
+  detail:     (id: number)       => ['videos', 'detail', id] as const,
+  reproducir: (id: number | null) => ['videos', 'reproducir', id] as const,
+  estadisticas: (id: number)     => ['videos', 'estadisticas', id] as const,
 }
-
-// ── Mock data ──────────────────────────────────────────────
-
-const MOCK_VIDEOS: Video[] = [
-  { id: 1,  titulo: 'Anatomía cardíaca funcional',           duracion: '18:42', esPremium: false, oculto: false, ordenEnSecuencia: 1,  cursoId: 1, linkEnlace: '', completado: true  },
-  { id: 2,  titulo: 'Fisiología del ciclo cardíaco',         duracion: '22:15', esPremium: false, oculto: false, ordenEnSecuencia: 2,  cursoId: 1, linkEnlace: '', completado: true  },
-  { id: 3,  titulo: 'Semiología cardiovascular',             duracion: '31:08', esPremium: true,  oculto: false, ordenEnSecuencia: 3,  cursoId: 1, linkEnlace: '', completado: false },
-  { id: 4,  titulo: 'Lectura sistemática del ECG',           duracion: '25:30', esPremium: false, oculto: false, ordenEnSecuencia: 4,  cursoId: 1, linkEnlace: '', completado: false },
-  { id: 5,  titulo: 'Arritmias supraventriculares',          duracion: '28:44', esPremium: true,  oculto: false, ordenEnSecuencia: 5,  cursoId: 1, linkEnlace: '', completado: false },
-  { id: 6,  titulo: 'Arritmias ventriculares',               duracion: '24:12', esPremium: true,  oculto: false, ordenEnSecuencia: 6,  cursoId: 1, linkEnlace: '', completado: false },
-  { id: 7,  titulo: 'Evaluación del nivel de conciencia',    duracion: '20:10', esPremium: false, oculto: false, ordenEnSecuencia: 1,  cursoId: 2, linkEnlace: '', completado: false },
-  { id: 8,  titulo: 'Pares craneales — exploración práctica',duracion: '24:35', esPremium: false, oculto: false, ordenEnSecuencia: 2,  cursoId: 2, linkEnlace: '', completado: false },
-  { id: 9,  titulo: 'ACV isquémico — código ictus',          duracion: '32:20', esPremium: false, oculto: false, ordenEnSecuencia: 3,  cursoId: 2, linkEnlace: '', completado: false },
-]
-
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 // ── Fetch functions ────────────────────────────────────────
 
-async function fetchVideosByCurso(cursoId: number): Promise<Video[]> {
-  await delay(400)
-  // TODO: const res = await api.get<Video[]>(`/cursos/${cursoId}/videos`)
-  // return res.data
-  return MOCK_VIDEOS.filter(v => v.cursoId === cursoId)
-}
-
-async function fetchVideoById(id: number): Promise<Video> {
-  await delay(300)
-  // TODO: const res = await api.get<Video>(`/videos/${id}`)
-  // return res.data
-  const video = MOCK_VIDEOS.find(v => v.id === id)
-  if (!video) throw new Error('Video no encontrado')
-  return video
-}
-
-async function createVideo(data: Omit<Video, 'id'>): Promise<Video> {
-  const res = await api.post<Video>('/videos', data)
+async function fetchVideos(params?: { pagina?: number; porPagina?: number; busqueda?: string }) {
+  const res = await api.get<PaginatedResponse<VideoVistasPreviaDto>>('/videos', { params })
   return res.data
 }
 
-async function updateVideo(id: number, data: Partial<Video>): Promise<Video> {
-  const res = await api.put<Video>(`/videos/${id}`, data)
+async function fetchVideosByCurso(
+  cursoId: number,
+  params?: { pagina?: number; porPagina?: number }
+) {
+  // catálogo completo paginado de una colección
+  const res = await api.get<PaginatedResponse<VideoVistasPreviaDto>>(
+    `/videos/coleccion/${cursoId}`,
+    { params }
+  )
+  return res.data
+}
+
+async function fetchVideoById(id: number): Promise<VideoDetalleDto> {
+  const res = await api.get<VideoDetalleDto>(`/videos/${id}`)
+  return res.data
+}
+
+async function fetchReproducir(id: number): Promise<VideoReproduccionDto> {
+  const res = await api.get<VideoReproduccionDto>(`/videos/${id}/reproducir`)
+  return res.data
+}
+
+async function fetchEstadisticas(id: number): Promise<VideoEstadisticasDto> {
+  const res = await api.get<VideoEstadisticasDto>(`/videos/${id}/estadisticas`)
+  return res.data
+}
+
+async function createVideo(formData: FormData): Promise<VideoDetalleDto> {
+  const res = await api.post<VideoDetalleDto>('/videos', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data
+}
+
+async function updateVideo(id: number, data: ActualizarVideoDto): Promise<VideoDetalleDto> {
+  const res = await api.put<VideoDetalleDto>(`/videos/${id}`, data)
   return res.data
 }
 
@@ -59,74 +73,101 @@ async function deleteVideo(id: number): Promise<void> {
   await api.delete(`/videos/${id}`)
 }
 
-async function marcarCompletado(id: number): Promise<void> {
-  // TODO: await api.post(`/videos/${id}/completado`)
-  await delay(200)
-}
-
 // ── Hooks ──────────────────────────────────────────────────
 
-/** Videos de un curso específico */
-export function useVideosByCurso(cursoId: number) {
+/** Catálogo público paginado, opcionalmente filtrado por búsqueda */
+export function useVideos(params?: { pagina?: number; porPagina?: number; busqueda?: string }) {
   return useQuery({
-    queryKey: videoKeys.byCurso(cursoId),
-    queryFn:  () => fetchVideosByCurso(cursoId),
-    enabled:  !!cursoId,
+    queryKey: videoKeys.list(params),
+    queryFn: () => fetchVideos(params),
+    placeholderData: keepPreviousData,
   })
 }
 
-/** Detalle de un video */
+/** Videos de una colección específica, paginado */
+export function useVideosByCurso(
+  cursoId: number,
+  params?: { pagina?: number; porPagina?: number }
+) {
+  return useQuery({
+    queryKey: videoKeys.byCurso(cursoId, params),
+    queryFn: () => fetchVideosByCurso(cursoId, params),
+    enabled: !!cursoId,
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** Detalle de un video (Admin ve borradores; el resto, 404 si esPublico=false) */
 export function useVideo(id: number) {
   return useQuery({
     queryKey: videoKeys.detail(id),
-    queryFn:  () => fetchVideoById(id),
-    enabled:  !!id,
+    queryFn: () => fetchVideoById(id),
+    enabled: !!id,
   })
 }
 
-/** Crear video — admin */
+/**
+ * URL firmada de reproducción. Requiere JWT incluso para video gratuito.
+ * Solo se dispara cuando `id` deja de ser null (p.ej. al hacer click en el video).
+ * No cachear como si fuera fija: caduca a las 2 horas.
+ */
+export function useReproducirVideo(id: number | null) {
+  return useQuery({
+    queryKey: videoKeys.reproducir(id),
+    queryFn: () => fetchReproducir(id as number),
+    enabled: !!id,
+    retry: false,      // un 401/403/404 no se arregla reintentando
+    staleTime: 0,
+    gcTime: 0,
+  })
+}
+
+/** Estadísticas — solo Admin */
+export function useEstadisticasVideo(id: number) {
+  return useQuery({
+    queryKey: videoKeys.estadisticas(id),
+    queryFn: () => fetchEstadisticas(id),
+    enabled: !!id,
+  })
+}
+
+/** Crear video — Admin. Espera FormData con los campos de CrearVideoDto + "archivo" */
 export function useCreateVideo() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: createVideo,
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: videoKeys.byCurso(variables.cursoId) })
+    onSuccess: (video) => {
+      if (video.videoCursoId) {
+        qc.invalidateQueries({ queryKey: videoKeys.byCurso(video.videoCursoId) })
+      }
+      qc.invalidateQueries({ queryKey: videoKeys.all() })
     },
   })
 }
 
-/** Editar video — admin */
+/** Editar video — Admin. Todos los campos opcionales */
 export function useUpdateVideo() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Video> }) =>
+    mutationFn: ({ id, data }: { id: number; data: ActualizarVideoDto }) =>
       updateVideo(id, data),
     onSuccess: (updatedVideo) => {
       qc.invalidateQueries({ queryKey: videoKeys.detail(updatedVideo.id) })
-      qc.invalidateQueries({ queryKey: videoKeys.byCurso(updatedVideo.cursoId) })
+      if (updatedVideo.videoCursoId) {
+        qc.invalidateQueries({ queryKey: videoKeys.byCurso(updatedVideo.videoCursoId) })
+      }
+      qc.invalidateQueries({ queryKey: videoKeys.all() })
     },
   })
 }
 
-/** Eliminar video — admin */
+/** Eliminar video — Admin */
 export function useDeleteVideo() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, cursoId }: { id: number; cursoId: number }) =>
-      deleteVideo(id),
+    mutationFn: ({ id }: { id: number; cursoId?: number }) => deleteVideo(id),
     onSuccess: (_, { cursoId }) => {
-      qc.invalidateQueries({ queryKey: videoKeys.byCurso(cursoId) })
-    },
-  })
-}
-
-/** Marcar video como completado — usuario */
-export function useMarcarCompletado() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: marcarCompletado,
-    onSuccess: () => {
-      // Invalida todos los videos para que se actualice el progreso
+      if (cursoId) qc.invalidateQueries({ queryKey: videoKeys.byCurso(cursoId) })
       qc.invalidateQueries({ queryKey: videoKeys.all() })
     },
   })

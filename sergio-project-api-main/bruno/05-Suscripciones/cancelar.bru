@@ -1,0 +1,25 @@
+meta {
+  name: Cancelar mi suscripcion
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/suscripciones/mia/cancelar
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("cancelada o sin nada que cancelar", function () {
+    expect([200, 404]).to.include(res.getStatus());
+  });
+}
+
+docs {
+  Conserva el acceso hasta el fin del periodo pagado, sin reembolso
+  (canceladaConAccesoVigente = true), pero pierde los dias de gracia.
+
+  Solo se marca como cancelada si Mercado Pago lo confirma con una lectura
+  posterior. Si no, 502 y no cambia nada.
+}

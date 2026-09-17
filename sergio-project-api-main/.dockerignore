@@ -1,0 +1,31 @@
+# Artefactos de compilación: si se copian, invalidan la caché y pueden
+# sobrescribir el publish con binarios del host.
+bin/
+obj/
+
+# Control de versiones y entorno de desarrollo
+.git/
+.gitignore
+.vs/
+.vscode/
+**/*.user
+
+# Cosas que no pertenecen a la imagen
+docs/
+bruno/
+tests/
+*.md
+SergioApi.http
+
+# Docker mismo
+Dockerfile
+.dockerignore
+docker-compose*.yml
+.env
+.env.*
+
+# Config local: los secretos llegan por variables de entorno.
+# OJO: appsettings.json NO se excluye — es la base de configuración
+# (Issuer, Audience, LogLevel) que las variables de entorno sobrescriben.
+appsettings.Development.json
+appsettings.Local.json

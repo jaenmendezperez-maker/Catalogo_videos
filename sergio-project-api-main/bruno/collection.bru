@@ -1,0 +1,21 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Colección de SergioApi.
+
+  Orden de uso:
+    1. Elige el entorno (Local o Docker) arriba a la derecha.
+    2. Rellena correoAdmin / passwordAdmin en las variables del entorno.
+    3. Ejecuta 01-Auth > Login: guarda accessToken y refreshToken automáticamente.
+    4. El resto de peticiones heredan el bearer de aquí.
+}

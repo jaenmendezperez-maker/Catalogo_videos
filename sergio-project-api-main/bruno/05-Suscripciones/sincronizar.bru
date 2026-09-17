@@ -1,0 +1,25 @@
+meta {
+  name: Sincronizar al volver del pago
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/suscripciones/mia/sincronizar
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  El front lo llama al volver de Mercado Pago (back_url). Relee el estado real
+  en vez de fiarse de los parametros de la URL de vuelta, que no estan
+  documentados.
+
+  Limitado a 5 por minuto (politica "sensible").
+}

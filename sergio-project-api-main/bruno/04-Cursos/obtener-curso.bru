@@ -1,0 +1,28 @@
+meta {
+  name: Obtener curso
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/cursos/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: {{cursoId}}
+}
+
+tests {
+  test("los videos anidados no exponen GUIDs", function () {
+    (res.body.videos || []).forEach(function (v) {
+      expect(v).to.not.have.property("bunnyVideoId");
+    });
+  });
+}
+
+docs {
+  Los videos de la coleccion tambien se filtran por esPublico:
+  un Admin ve los borradores, cualquier otro no.
+}

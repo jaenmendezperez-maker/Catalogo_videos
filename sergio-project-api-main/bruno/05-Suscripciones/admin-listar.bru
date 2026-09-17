@@ -1,0 +1,29 @@
+meta {
+  name: Listar suscripciones (Admin)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/suscripciones/admin?pagina=1&porPagina=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  pagina: 1
+  porPagina: 20
+  ~estado: Activa
+  ~busqueda: example.com
+}
+
+tests {
+  test("responde 200 con token de Admin", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  estado admite: PendientePago, Activa, Pausada, Suspendida, Cancelada,
+  Abandonada, ErrorCreacion. busqueda filtra por el correo del usuario o del pagador.
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Actualizar curso (Admin)
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/cursos/:id
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+params:path {
+  id: {{cursoId}}
+}
+
+body:json {
+  {
+    "nombre": "Curso renombrado desde Bruno"
+  }
+}

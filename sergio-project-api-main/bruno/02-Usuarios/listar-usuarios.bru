@@ -1,0 +1,27 @@
+meta {
+  name: Listar usuarios (Admin)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/usuarios?pagina=1&porPagina=10
+  body: none
+  auth: inherit
+}
+
+params:query {
+  pagina: 1
+  porPagina: 10
+}
+
+tests {
+  test("responde 200 con token de Admin", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Requiere rol Admin; con un usuario normal devuelve 403.
+  pagina se fuerza a un minimo de 1 y porPagina se acota a [1, 50].
+}

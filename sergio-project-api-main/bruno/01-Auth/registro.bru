@@ -1,0 +1,49 @@
+meta {
+  name: Registro
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/auth/registro
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Usuario de prueba",
+    "correo": "qa{{$randomInt}}@example.com",
+    "contrasena": "Passw0rd",
+    "telefono": "5512345678"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("accessToken",  res.body.token);
+    bru.setEnvVar("refreshToken", res.body.refreshToken);
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("el correo se guarda normalizado a minusculas", function () {
+    expect(res.body.correo).to.equal(res.body.correo.toLowerCase());
+  });
+}
+
+docs {
+  El correo lleva un numero aleatorio para que la coleccion se pueda reejecutar
+  sin chocar con el indice unico de usuarios.Correo.
+
+  Limitado a 5 registros por hora y por IP.
+  Reenviar el mismo correo cambiando mayusculas devuelve 400, no crea una segunda cuenta.
+}

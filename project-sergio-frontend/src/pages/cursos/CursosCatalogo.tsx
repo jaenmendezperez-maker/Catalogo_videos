@@ -1,7 +1,6 @@
 // src/pages/cursos/CursosCatalogo.tsx
 import { useState } from 'react'
 import { useCursosFiltrados } from '../../hooks/useCursos'
-import { CATEGORIAS, NIVELES } from '../../utils/constants'
 import Spinner from '../../components/ui/Spinner'
 import CursoCard from '@/components/cursos/CursoCard'
 
@@ -9,13 +8,10 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
   return <span className={`material-symbols-outlined ${className}`}>{name}</span>
 }
 
-// ── Página ─────────────────────────────────────────────────
-
 const ORDEN_OPS = [
-  { value: 'popular',  label: 'Más populares'      },
-  { value: 'reciente', label: 'Más recientes'      },
-  { value: 'duracion', label: 'Más cortos primero' },
-]
+  { value: 'nombre', label: 'Nombre (A-Z)' },
+  { value: 'videos', label: 'Más videos primero' },
+] as const
 
 function CursosCatalogo() {
   const {
@@ -40,39 +36,38 @@ function CursosCatalogo() {
 
   return (
     <div
-    className="bg-[#eff8fa] min-h-screen"
-    style={{
-      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23c6c6cd' stroke-width='1.5' opacity='0.3'%3E%3Cpath d='M20 15v10M15 20h10'/%3E%3C/g%3E%3C/svg%3E")`,
-      backgroundRepeat: 'repeat',
-    }}
-  >
-
-    {/* Header */}
-    <div className="max-w-8xl mx-auto px-4 sm:px-3 pt-3">
-    <div className="relative overflow-hidden border border-[#c6c6cd] bg-[#eff4ff]">
-      <img
-        src="/assets/images/fondo-header.jpg"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover opacity-100"
-      />
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-12 py-12">
-        <p className="text-[#006398] text-sm font-semibold uppercase tracking-widest mb-2">Formación continua</p>
-        <h1 className="font-headline text-4xl font-bold text-[#0b1c30] mb-3">Catálogo de cursos</h1>
-        <p className="text-[#45464d] text-sm max-w-lg">
-          Explora nuestra biblioteca de contenido clínico actualizado, impartido por especialistas de referencia.
-        </p>
+      className="bg-[#eff8fa] min-h-screen"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23c6c6cd' stroke-width='1.5' opacity='0.3'%3E%3Cpath d='M20 15v10M15 20h10'/%3E%3C/g%3E%3C/svg%3E")`,
+        backgroundRepeat: 'repeat',
+      }}
+    >
+      {/* Header */}
+      <div className="max-w-8xl mx-auto px-4 sm:px-3 pt-3">
+        <div className="relative overflow-hidden border border-[#c6c6cd] bg-[#eff4ff]">
+          <img
+            src="/assets/images/fondo-header.jpg"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-100"
+          />
+          <div className="relative max-w-7xl mx-auto px-6 lg:px-12 py-12">
+            <p className="text-[#006398] text-sm font-semibold uppercase tracking-widest mb-2">Formación continua</p>
+            <h1 className="font-headline text-4xl font-bold text-[#0b1c30] mb-3">Catálogo de cursos</h1>
+            <p className="text-[#45464d] text-sm max-w-lg">
+              Explora nuestra biblioteca de contenido clínico actualizado.
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-8">
 
-        {/* Barra de búsqueda + controles */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-8">
+        {/* Barra de búsqueda + orden */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-[#45464d]" />
             <input
               type="text"
-              placeholder="Buscar cursos, especialidades, instructores..."
+              placeholder="Buscar cursos..."
               value={filtros.busqueda}
               onChange={(e) => setFiltro('busqueda', e.target.value)}
               className="w-full bg-[#eff4ff] border border-[#c6c6cd] text-[#0b1c30] placeholder-[#45464d]/60 pl-11 pr-4 py-3 text-sm outline-none focus:border-[#006398] focus:bg-[#ffffff] focus:ring-2 focus:ring-[#006398]/15 transition-all rounded"
@@ -100,7 +95,7 @@ function CursosCatalogo() {
                 {ORDEN_OPS.map((op) => (
                   <button
                     key={op.value}
-                    onClick={() => { setFiltro('orden', op.value as typeof filtros.orden); setMenuOrdenAbierto(false) }}
+                    onClick={() => { setFiltro('orden', op.value); setMenuOrdenAbierto(false) }}
                     className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${
                       filtros.orden === op.value ? 'bg-[#cce5ff]/60 text-[#004b73] font-medium' : 'text-[#45464d] hover:bg-[#eff4ff] hover:text-[#0b1c30]'
                     }`}
@@ -124,50 +119,14 @@ function CursosCatalogo() {
         </div>
 
         <div className="flex gap-8">
-
-          {/* Sidebar filtros */}
+          {/* Sidebar filtros — solo Acceso, sin Especialidad ni Nivel */}
           <aside className={`w-60 flex-shrink-0 space-y-6 ${verFiltrosMobile ? 'block' : 'hidden'} sm:block`}>
-
             <div>
-              <h3 className="text-[#0b1c30] text-xs font-semibold uppercase tracking-wider mb-3">Especialidad</h3>
-              <div className="space-y-1">
-                {(['Todas', ...CATEGORIAS] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setFiltro('categoria', cat as typeof filtros.categoria)}
-                    className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-all ${
-                      filtros.categoria === cat ? 'bg-[#cce5ff]/60 text-[#004b73] font-medium' : 'text-[#45464d] hover:text-[#0b1c30] hover:bg-[#eff4ff] cursor-pointer'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t border-[#c6c6cd] pt-6">
-              <h3 className="text-[#0b1c30] text-xs font-semibold uppercase tracking-wider mb-3">Nivel</h3>
-              <div className="space-y-1">
-                {(['Todos', ...NIVELES] as const).map((niv) => (
-                  <button
-                    key={niv}
-                    onClick={() => setFiltro('nivel', niv as typeof filtros.nivel)}
-                    className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-all ${
-                      filtros.nivel === niv ? 'bg-[#cce5ff]/60 text-[#004b73] font-medium' : 'text-[#45464d] hover:text-[#0b1c30] hover:bg-[#eff4ff] cursor-pointer'
-                    }`}
-                  >
-                    {niv}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t border-[#c6c6cd] pt-6">
               <h3 className="text-[#0b1c30] text-xs font-semibold uppercase tracking-wider mb-3">Acceso</h3>
               <div className="space-y-2">
                 {([
-                  { value: 'solo-gratis',  label: 'Solo gratuitos' },
-                  { value: 'solo-premium', label: 'Solo Premium'   },
+                  { value: 'solo-gratis', label: 'Solo gratuitos' },
+                  { value: 'solo-premium', label: 'Solo Premium' },
                 ] as const).map(({ value, label }) => (
                   <label key={value} className="flex items-center gap-3 cursor-pointer group">
                     <div
@@ -216,13 +175,17 @@ function CursosCatalogo() {
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <img src="/assets/images/exclamation.png" alt="Sin resultados" className="w-16 h-16 mb-4 opacity-80" />
                 <h3 className="text-[#0b1c30] font-semibold mb-2">Sin resultados</h3>
-                <p className="text-[#45464d] text-sm mb-6">No encontramos cursos con esos filtros.</p>
-                <button
-                  onClick={resetFiltros}
-                  className="bg-[#cce5ff]/60 hover:bg-[#cce5ff] text-[#004b73] text-sm px-5 py-2.5 rounded-full transition-all cursor-pointer"
-                >
-                  Ver todos los cursos
-                </button>
+                <p className="text-[#45464d] text-sm mb-6">
+                  {hayFiltrosActivos ? 'No encontramos cursos con esos filtros.' : 'Todavía no hay cursos publicados.'}
+                </p>
+                {hayFiltrosActivos && (
+                  <button
+                    onClick={resetFiltros}
+                    className="bg-[#cce5ff]/60 hover:bg-[#cce5ff] text-[#004b73] text-sm px-5 py-2.5 rounded-full transition-all cursor-pointer"
+                  >
+                    Ver todos los cursos
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

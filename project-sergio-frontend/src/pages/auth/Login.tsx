@@ -31,16 +31,18 @@ function Login() {
     if (!form.correo || !form.contrasena) { setError('Por favor completa todos los campos.'); return }
     setLoading(true)
     try {
-      const { user, token, refreshToken } = await login({ correo: form.correo, contrasena: form.contrasena })
-      setAuth(user, token, refreshToken)
-      const destino = user.rol === 'Admin' ? '/admin' : '/dashboard'
+      const data = await login({ correo: form.correo, contrasena: form.contrasena })
+      setAuth(data)
+      const destino = data.rol === 'Admin' ? '/admin' : '/dashboard'
       navigate(location.state?.from?.pathname || destino, { replace: true })
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión.')
+      // El backend real da 401 con mensaje genérico (no distingue correo de contraseña)
+      const mensaje = (err as any)?.response?.data?.mensaje ?? 'Correo o contraseña incorrectos.'
+      setError(mensaje)
     } finally {
       setLoading(false)
     }
-  }
+}
 
   return (
     // 1. CONTENEDOR PRINCIPAL
